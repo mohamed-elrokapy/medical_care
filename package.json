@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 5231",
-    "build": "next build",
+    "dev": "node init && next dev -p 5231",
+    "build": "node init && next build",
     "preview": "serve out -l 5231",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
