@@ -1,6 +1,10 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-export interface Appointment {
+/**
+ * DEMO ONLY. Requests are kept in this browser tab's memory (Redux) and are
+ * discarded on reload. Nothing is sent to a server, emailed, or persisted.
+ */
+export interface AppointmentRequest {
   id: string;
   name: string;
   email: string;
@@ -9,51 +13,32 @@ export interface Appointment {
   date: string;
   time: string;
   message?: string;
-  status: 'pending' | 'confirmed' | 'cancelled';
   createdAt: string;
 }
 
 interface AppointmentState {
-  appointments: Appointment[];
+  requests: AppointmentRequest[];
   loading: boolean;
   error: string | null;
-  currentAppointment: Appointment | null;
 }
 
 const initialState: AppointmentState = {
-  appointments: [],
+  requests: [],
   loading: false,
   error: null,
-  currentAppointment: null,
 };
 
-// Async thunk for booking appointment
-export const bookAppointment = createAsyncThunk(
-  'appointments/book',
-  async (appointmentData: Omit<Appointment, 'id' | 'status' | 'createdAt'>) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const newAppointment: Appointment = {
-      ...appointmentData,
-      id: Date.now().toString(),
-      status: 'pending',
+export const submitDemoRequest = createAsyncThunk(
+  'appointments/submitDemo',
+  async (data: Omit<AppointmentRequest, 'id' | 'createdAt'>) => {
+    // Short pause so the loading state is visible. No network call happens.
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    const request: AppointmentRequest = {
+      ...data,
+      id: `demo-${Date.now()}`,
       createdAt: new Date().toISOString(),
     };
-
-    // Simulate sending email notification
-    console.log('Email sent to admin:', newAppointment);
-    
-    return newAppointment;
-  }
-);
-
-// Async thunk for confirming appointment
-export const confirmAppointment = createAsyncThunk(
-  'appointments/confirm',
-  async (appointmentId: string) => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return appointmentId;
+    return request;
   }
 );
 
@@ -64,33 +49,23 @@ const appointmentSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    setCurrentAppointment: (state, action: PayloadAction<Appointment | null>) => {
-      state.currentAppointment = action.payload;
-    },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(bookAppointment.pending, (state) => {
+      .addCase(submitDemoRequest.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(bookAppointment.fulfilled, (state, action) => {
+      .addCase(submitDemoRequest.fulfilled, (state, action) => {
         state.loading = false;
-        state.appointments.push(action.payload);
-        state.currentAppointment = action.payload;
+        state.requests.push(action.payload);
       })
-      .addCase(bookAppointment.rejected, (state, action) => {
+      .addCase(submitDemoRequest.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Failed to book appointment';
-      })
-      .addCase(confirmAppointment.fulfilled, (state, action) => {
-        const appointment = state.appointments.find(apt => apt.id === action.payload);
-        if (appointment) {
-          appointment.status = 'confirmed';
-        }
+        state.error = action.error.message || 'Something went wrong.';
       });
   },
 });
 
-export const { clearError, setCurrentAppointment } = appointmentSlice.actions;
+export const { clearError } = appointmentSlice.actions;
 export default appointmentSlice.reducer;
